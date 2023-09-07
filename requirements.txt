@@ -1,0 +1,13 @@
+accelerate
+colorama
+cpm_kernels
+sentencepiece
+streamlit
+transformers_stream_generator
+nvidia-pytriton
+torch
+websocket-client
+numpy
+Pillow
+diffusers==0.14
+transformers
