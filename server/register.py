@@ -4,6 +4,7 @@ import logging
 import os
 import threading
 import time
+from typing import Dict
 
 import torch
 import websocket
@@ -12,6 +13,17 @@ from packageinfo import *
 from request_collections import *
 
 LOGGER = logging.getLogger("AntGrid Server")
+
+state_pack = {
+    "type": PackageType.ServerState,
+    "state": "Running",
+    "model": "",
+}
+
+token = ""
+stream_llm = ["chatglm", "baichuan"]
+no_stream_llm = ["llama2"]
+diffusion_model = ["sd1.5"]
 
 def _parse_args():
     parser = argparse.ArgumentParser(description="AntGrid Server Communication Module.")
@@ -22,18 +34,17 @@ def _parse_args():
         action="store_true",
         help="Enable verbose logging in debug mode.",
     )
-
     parser.add_argument(
         '--host',
         type=str,
         default='127.0.0.1',
-        help='IP address of the scheduler.'
+        help='IP address of the AntGrid scheduler.'
     )
     parser.add_argument(
         '--port',
         type=str,
         default='3000',
-        help='Port of the scheuler.'
+        help='Port of the AntGrid scheuler.'
     )
     parser.add_argument(
         '--route',
@@ -46,16 +57,30 @@ def _parse_args():
         type=str,
         required=True,
         choices=["chatglm", "baichuan", "llama2", "sd1.5"],
-        help="Which model to run. chatglm, baichuan, llama2 or sd1.5"
+        help="Which model to run. Choose from chatglm, baichuan, llama2 or sd1.5"
+    )
+    parser.add_argument(
+        "--http_port",
+        "--hport",
+        type=int,
+        default=8000,
+        help="The HTTP port that the Triton server is listening on."
     )
     parser.add_argument(
         "--grpc_port",
+        "--gport",
         type=int,
         default=8001,
-        help="grpc port"
+        help="The gRPC port that the Triton server is listening on."
+    )
+    parser.add_argument(
+        "--metrics_port",
+        "--mport",
+        type=int,
+        default=8002,
+        help="The gRPC port that the Triton server is listening on."
     )
     return parser.parse_args()
-
 
 def set_login_package(token: str, device: str, devicemem: str):
     return {
@@ -64,20 +89,6 @@ def set_login_package(token: str, device: str, devicemem: str):
         "device": device,
         "deviceMem": devicemem
     }
-
-
-state_pack = {
-    "type": PackageType.ServerState,
-    "state": "Running",
-    "model": "",
-}
-
-
-token = ""
-stream_llm = ["chatglm", "baichuan"]
-no_stream_llm = ["llama2"]
-diffusion_model = ["sd1.5"]
-
 
 def on_open(wsapp):
     LOGGER.info("Connection Established.")
@@ -108,15 +119,8 @@ def _on_message(wsapp, message):
         # pytriton_file_name = prepare(message)
         # th = threading.Thread(target=run_pytriton, args=(pytriton_file_name,))
         # th.start()
-        ##########################################################################
-        time.sleep(1)
-        # response = {
-        #     "type": PackageType.ServerState,
-        #     "state": "Running",
-        #     "model": models_to_run
-        # }
-        # wsapp.send(json.dumps(response))
-        # LOGGER.info("Running {}".format(models_to_run))
+
+
         state_pack["model"] = models_to_run
         state_pack["state"] = "Ready"
         wsapp.send(json.dumps(state_pack))
@@ -261,8 +265,8 @@ if __name__ == '__main__':
     log_level = logging.DEBUG if args.verbose else logging.INFO
     if 'ANTGRID_TOKEN' not in os.environ.keys():
         token = input("ANTGRID_TOKEN haven't been set in your environment.\nYou can exit and run export ANTGRID_TOKEN=xxx where xxx is your token in antgrid in you shell, \nor type it here directly:")
-
-    token = os.environ['ANTGRID_TOKEN']
+    else:
+        token = os.environ['ANTGRID_TOKEN']
     logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(name)s: %(message)s")
     if not torch.cuda.is_available():
         LOGGER.error("CUDA is not available on your device.")
@@ -271,7 +275,12 @@ if __name__ == '__main__':
         LOGGER.info("ServerRuntime Start.")
         websocket.setdefaulttimeout(1000)
         url = 'ws://' + args.host + ':' + args.port + '/' + args.route
-        wsapp = websocket.WebSocketApp(url, on_open=on_open, on_message=on_message, on_cont_message=on_cont_message, on_data=on_data, on_close=on_close)
+        wsapp = websocket.WebSocketApp(
+            url, on_open=on_open,
+            on_message=on_message,
+            on_cont_message=on_cont_message,
+            on_data=on_data,
+            on_close=on_close)
         wsapp.run_forever(ping_interval=2000, ping_timeout=1000)
     except KeyboardInterrupt:
         LOGGER.info("ServerRuntime exited.")

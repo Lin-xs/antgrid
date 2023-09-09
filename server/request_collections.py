@@ -1,8 +1,6 @@
-import base64
-import io
+import json
 
 import numpy as np
-from PIL import Image  # pytype: disable=import-error
 from pytriton.client import ModelClient
 
 
@@ -107,9 +105,6 @@ class BaichuanCall:
     def add_iter(payload, tid, method="grpc", address="localhost", port="8001"):
         input = json.dumps(payload["input"])
         history = payload["history"]
-        # max_length = payload["max_length"]
-        # top_p = payload["top_p"]
-        # temperature = payload["temperature"]
         max_length = 2048
         top_p = 0.7
         temperature = 0.9
@@ -145,8 +140,6 @@ class StableDiffusion_1_5Call:
         inference_steps = np.array([[inference_steps]])
 
         with ModelClient(f"{method}://{address}:{port}", "StableDiffusion_1_5", init_timeout_s=1200.0) as client:
-            # result_dict = client.infer_batch(prompt=prompt, img_size=img_size)
-            # result_dict = client.infer_batch(prompt=prompt, img_size=img_size, inference_steps=inference_steps)
             result_dict = client.infer_batch(lora_tag = lora_tag,
                                              scale = scale,
                                              prompt=prompt,
