@@ -1,41 +1,42 @@
 """Model for Stable Diffusion 1.5."""
-import argparse
 import base64
 import io
 import logging
+from typing import Union
 
 import numpy as np
 import torch  # pytype: disable=import-error
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
 from lora_diffusion import patch_pipe, tune_lora_scale
-from pytriton.decorators import batch, first_value, group_by_values
-from pytriton.model_config import DynamicBatcher, ModelConfig, Tensor
-from pytriton.triton import Triton, TritonConfig
+from pytriton.decorators import batch
 
-LOGGER = logging.getLogger("examples.huggingface_stable_diffusion.server")
+LOGGER = logging.getLogger("examples.huggingface_stable_diffusion.model")
 
-DEVICE = "cuda:4" if torch.cuda.is_available() else "cpu"
 IMAGE_FORMAT = "JPEG"
 
 
-
-safetensors_list = [
-    "lora_disney",
-    "lora_popart",
-    "lora_krk_inpainting",
-    "modern_disney_svd",
-    "analog_svd_rank4"
-]
-
 class PytritonModel():
-    def __init__(self, lora_safetensor_dir: str) -> None:
-        self.pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16).to(DEVICE)
+    safetensors_list = [
+        "lora_disney",
+        "lora_popart",
+        "lora_krk_inpainting",
+        "modern_disney_svd",
+        "analog_svd_rank4"
+    ]
+
+    def __init__(self,
+                 repo_name_or_dir: str,
+                 lora_safetensor_dir: str,
+                 device: Union[str, int]) -> None:
+        self.pipe = StableDiffusionPipeline.from_pretrained(
+            repo_name_or_dir,
+            torch_dtype=torch.float16
+        ).to(device)
         self.lora_state = (0, 0.0) #lora tag & lora scale
         self.lora_safetensor_dir = lora_safetensor_dir
-        patch_pipe(self.pipe, f"{lora_safetensor_dir}/{safetensors_list[0]}.safetensors")
+        patch_pipe(self.pipe, f"{lora_safetensor_dir}/{self.safetensors_list[0]}.safetensors")
         tune_lora_scale(self.pipe.unet, 0.0)
         tune_lora_scale(self.pipe.text_encoder, 0.0)
-        print("..............")
 
 
     def patch_and_tune(self, lora_tag: int, scale: float):
@@ -50,7 +51,7 @@ class PytritonModel():
             LOGGER.info(f"change tag {tag_now}, scale{scale_now} to tag {self.lora_state[0]}, scale{self.lora_state[1]}")
             return
 
-        patch_pipe(self.pipe, f"{self.lora_safetensor_dir}/{safetensors_list[lora_tag]}.safetensors")
+        patch_pipe(self.pipe, f"{self.lora_safetensor_dir}/{self.safetensors_list[lora_tag]}.safetensors")
         tune_lora_scale(self.pipe.unet, scale)
         tune_lora_scale(self.pipe.text_encoder, scale)
         self.lora_state = (lora_tag, scale)
@@ -79,7 +80,7 @@ class PytritonModel():
         img_W = int(img_W[0][0])
         num_inference_steps = int(num_inference_steps[0][0])
 
-        LOGGER.info(f"Prompts: {prompts}")
+        LOGGER.debug(f"Prompts: {prompts}")
         LOGGER.info(f"Image Size: {img_H}x{img_W}")
 
         lora_tag = int(lora_tag[0][0])
@@ -97,7 +98,7 @@ class PytritonModel():
         ):
             raw_data = self._encode_image_to_base64(image)
             outputs.append(raw_data)
-            LOGGER.info(f"Generated result for prompt `{prompts[idx]}` with size {len(raw_data)}")
+            LOGGER.debug(f"Generated result for prompt `{prompts[idx]}` with size {len(raw_data)}")
 
         LOGGER.debug(f"Prepared batch response of size: {len(outputs)}")
         return {"image": np.array(outputs)}

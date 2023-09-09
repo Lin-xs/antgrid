@@ -1,56 +1,41 @@
 """Server for Baichuan13B."""
-import base64
-import io
 import json
 import logging
-import os
 from typing import Union
 
 import numpy as np
-import torch  # pytype: disable=import-error
-from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
-from pytriton.decorators import batch, first_value, group_by_values
+import torch
+from pytriton.decorators import batch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation.utils import GenerationConfig
 
-current_file = __file__
-absolute_path = os.path.abspath(current_file)
-parent_dir = os.path.dirname(absolute_path)
+LOGGER = logging.getLogger("examples.huggingface_baichuan_13b_chat.model")
 
-LOGGER = logging.getLogger("examples.huggingface_baichuan_13b_chat.server")
-LOGGER.setLevel(logging.DEBUG)
-
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-IMAGE_FORMAT = "JPEG"
-
-dir_name = "Baichuan-13B-Chat"
-repo_name = f"{parent_dir}/{dir_name}"
-repo_name = "/home/wyq/antgrid_models/Baichuan-13B-Chat"
 class PytritonModel():
-    def __init__(self, device: Union[str, int]) -> None:
+    def __init__(self,
+                 repo_name_or_dir: str,
+                 device: Union[str, int]) -> None:
         self.model = AutoModelForCausalLM.from_pretrained(
-            repo_name,
+            repo_name_or_dir,
             torch_dtype=torch.float16,
-            # device_map='auto',
             trust_remote_code=True)
-        self.model = self.model.quantize(8).to(DEVICE)
+        self.model = self.model.quantize(8).to(device)
         self.model.generation_config = GenerationConfig.from_pretrained(
-            repo_name
+            repo_name_or_dir
         )
         self.tokenizer = AutoTokenizer.from_pretrained(
-            repo_name,
+            repo_name_or_dir,
             use_fast=False,
             trust_remote_code=True
         )
+        self.model = self.model.eval()
         self.iter_dict = {}
-    #@group_by_values("img_size")
-    #@first_value("img_size")
+
     @batch
     def _infer_fn(
         self,
         input: np.ndarray,
     ):
-        LOGGER.warning("receive infp.")
         prompts = [np.char.decode(p.astype("bytes"), "utf-8").item() for p in input]
         messages = json.loads(prompts[0])
         LOGGER.debug(f"message: {messages}")
@@ -76,7 +61,10 @@ class PytritonModel():
             self.iter_dict.pop(tid)
 
         LOGGER.debug(f"response[0]: {response[:10]}")
-        return {"response": np.char.encode(np.array([[response]])), "history": np.array([[json.dumps(history_ls)]])}
+        return {
+            "response": np.char.encode(np.array([[response]])),
+            "history": np.array([[json.dumps(history_ls)]])
+        }
 
     @batch
     def _add_iter(
@@ -104,5 +92,8 @@ class PytritonModel():
 
         self.iter_dict[tid] = self.model.chat(self.tokenizer, messages, stream=True)
 
-        return {"response": np.char.encode(np.array([["NULL"]])), "history": np.array([[json.dumps(history_ls)]])}
+        return {
+            "response": np.char.encode(np.array([["NULL"]])),
+            "history": np.array([[json.dumps(history_ls)]])
+        }
 

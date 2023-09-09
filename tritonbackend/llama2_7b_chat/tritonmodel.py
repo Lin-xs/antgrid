@@ -1,19 +1,14 @@
 """Server for ChatGLM 6B."""
-import base64
-import io
 import json
 import logging
-import os
 from typing import Union
 
 import numpy as np
 import torch  # pytype: disable=import-error
 import transformers
-from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
 from pytriton.decorators import batch
-from transformers import AutoModel, AutoTokenizer
 
-LOGGER = logging.getLogger("examples.huggingface_llama2-7b-chat.server")
+LOGGER = logging.getLogger("examples.huggingface_llama2-7b-chat.model")
 LOGGER.setLevel(logging.DEBUG)
 
 
@@ -28,7 +23,7 @@ class PytritonModel():
             device=device,
             trust_remote_code=True
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(repo_name_or_dir)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(repo_name_or_dir)
 
     @batch
     def _infer_fn(

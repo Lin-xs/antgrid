@@ -4,6 +4,7 @@ import io
 import json
 import logging
 import os
+from typing import Union
 
 import numpy as np
 import torch  # pytype: disable=import-error
@@ -15,22 +16,25 @@ current_file = __file__
 absolute_path = os.path.abspath(current_file)
 parent_dir = os.path.dirname(absolute_path)
 
-LOGGER = logging.getLogger("examples.huggingface_chatglm.server")
+LOGGER = logging.getLogger("examples.huggingface_chatglm_6b.model")
 LOGGER.setLevel(logging.DEBUG)
 
-DEVICE = "cuda:1" if torch.cuda.is_available() else "cpu"
-IMAGE_FORMAT = "JPEG"
-paradir = '/home/yhc/ChatGLM-6B-model-parameter/'
 class PytritonModel():
-    def __init__(self) -> None:
-        self.model = AutoModel.from_pretrained(paradir, trust_remote_code=True).half()
-        self.tokenizer = AutoTokenizer.from_pretrained(paradir, trust_remote_code=True)
-        self.model = self.model.to(DEVICE)
+    def __init__(self,
+                 repo_name_or_dir: str,
+                 device: Union[str, int]) -> None:
+        self.model = AutoModel.from_pretrained(
+            repo_name_or_dir,
+            trust_remote_code=True
+        ).half()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            repo_name_or_dir,
+            trust_remote_code=True
+        )
+        self.model = self.model.to(device)
         self.model = self.model.eval()
         self.iter_dict = {}
 
-    #@group_by_values("img_size")
-    #@first_value("img_size")
     @batch
     def _infer_fn(
         self,
@@ -70,16 +74,16 @@ class PytritonModel():
         tid = int(tid[0][0])
         if self.iter_dict.get(tid) is None:
             raise RuntimeError
-        
+
         try:
             response, history_ls = next(self.iter_dict[tid])
         except StopIteration:
             response, history_ls = "[STOP]", []
             self.iter_dict.pop(tid)
-        
+
         LOGGER.debug(f"response[0]: {response[:10]}")
         return {"response": np.char.encode(np.array([[response]])), "history": np.array([[json.dumps(history_ls)]])}
-    
+
     @batch
     def _add_iter(
             self,
@@ -107,8 +111,3 @@ class PytritonModel():
 
         return {"response": np.char.encode(np.array([["NULL"]])), "history": np.array([[json.dumps(history_ls)]])}
 
-def _encode_image_to_base64(image):
-    raw_bytes = io.BytesIO()
-    image.save(raw_bytes, IMAGE_FORMAT)
-    raw_bytes.seek(0)  # return to the start of the buffer
-    return base64.b64encode(raw_bytes.read())
