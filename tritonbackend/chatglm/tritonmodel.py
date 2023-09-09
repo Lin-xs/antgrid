@@ -1,16 +1,15 @@
 """Server for ChatGLM 6B."""
 import base64
 import io
-import os
-import logging
 import json
+import logging
+import os
 
 import numpy as np
 import torch  # pytype: disable=import-error
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
-from transformers import AutoTokenizer, AutoModel
-
 from pytriton.decorators import batch, first_value, group_by_values
+from transformers import AutoModel, AutoTokenizer
 
 current_file = __file__
 absolute_path = os.path.abspath(current_file)

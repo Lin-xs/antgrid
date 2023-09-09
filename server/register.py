@@ -1,15 +1,14 @@
 import argparse
 import json
 import logging
-import websocket
+import os
 import threading
 import time
+
 import torch
-import os
+import websocket
 
 from packageinfo import *
-from typing import Dict
-from multiprocessing import Process, Queue
 from request_collections import *
 
 LOGGER = logging.getLogger("AntGrid Server")
@@ -25,34 +24,34 @@ def _parse_args():
     )
 
     parser.add_argument(
-        '--host', 
-        type=str, 
-        default='127.0.0.1', 
+        '--host',
+        type=str,
+        default='127.0.0.1',
         help='IP address of the scheduler.'
     )
     parser.add_argument(
-        '--port', 
-        type=str, 
-        default='3000', 
+        '--port',
+        type=str,
+        default='3000',
         help='Port of the scheuler.'
     )
     parser.add_argument(
-        '--route', 
-        type=str, 
-        default='ws', 
+        '--route',
+        type=str,
+        default='ws',
         help='Route of the websocket page.'
     )
     parser.add_argument(
-        '--model', 
-        type=str, 
-        required=True, 
-        choices=["chatglm", "baichuan", "llama2", "sd1.5"], 
+        '--model',
+        type=str,
+        required=True,
+        choices=["chatglm", "baichuan", "llama2", "sd1.5"],
         help="Which model to run. chatglm, baichuan, llama2 or sd1.5"
     )
     parser.add_argument(
-        "--grpc_port", 
-        type=int, 
-        default=8001, 
+        "--grpc_port",
+        type=int,
+        default=8001,
         help="grpc port"
     )
     return parser.parse_args()
@@ -262,7 +261,7 @@ if __name__ == '__main__':
     log_level = logging.DEBUG if args.verbose else logging.INFO
     if 'ANTGRID_TOKEN' not in os.environ.keys():
         token = input("ANTGRID_TOKEN haven't been set in your environment.\nYou can exit and run export ANTGRID_TOKEN=xxx where xxx is your token in antgrid in you shell, \nor type it here directly:")
-    
+
     token = os.environ['ANTGRID_TOKEN']
     logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(name)s: %(message)s")
     if not torch.cuda.is_available():

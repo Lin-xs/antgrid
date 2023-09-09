@@ -1,10 +1,9 @@
 import base64
 import io
+
 import numpy as np
 from PIL import Image  # pytype: disable=import-error
-
 from pytriton.client import ModelClient
-import json
 
 
 class ChatGLMCall:

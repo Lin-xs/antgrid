@@ -1,17 +1,17 @@
 """Server for Baichuan13B."""
 import base64
 import io
-import os
-import logging
 import json
+import logging
+import os
+from typing import Union
 
 import numpy as np
 import torch  # pytype: disable=import-error
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
+from pytriton.decorators import batch, first_value, group_by_values
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation.utils import GenerationConfig
-
-from pytriton.decorators import batch, first_value, group_by_values
 
 current_file = __file__
 absolute_path = os.path.abspath(current_file)
@@ -27,7 +27,7 @@ dir_name = "Baichuan-13B-Chat"
 repo_name = f"{parent_dir}/{dir_name}"
 repo_name = "/home/wyq/antgrid_models/Baichuan-13B-Chat"
 class PytritonModel():
-    def __init__(self) -> None:
+    def __init__(self, device: Union[str, int]) -> None:
         self.model = AutoModelForCausalLM.from_pretrained(
             repo_name,
             torch_dtype=torch.float16,
@@ -94,7 +94,7 @@ class PytritonModel():
         input = [np.char.decode(p.astype("bytes"), "utf-8").item() for p in input]
         input = input[0]
         messages = json.loads(input)
-        
+
         history_s = history[0][0]
         history_ls = json.loads(history_s)
 

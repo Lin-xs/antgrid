@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+
 class PackageType(IntEnum):
     Login = 0               # Server login request
 

@@ -7,11 +7,10 @@ import logging
 import numpy as np
 import torch  # pytype: disable=import-error
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
-
+from lora_diffusion import patch_pipe, tune_lora_scale
 from pytriton.decorators import batch, first_value, group_by_values
 from pytriton.model_config import DynamicBatcher, ModelConfig, Tensor
 from pytriton.triton import Triton, TritonConfig
-from lora_diffusion import patch_pipe, tune_lora_scale
 
 LOGGER = logging.getLogger("examples.huggingface_stable_diffusion.server")
 

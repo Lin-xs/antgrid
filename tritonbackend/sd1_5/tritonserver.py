@@ -1,10 +1,11 @@
 import argparse
+import logging
+import os
+
 import numpy as np
 from pytriton.decorators import batch, first_value, group_by_values
 from pytriton.model_config import DynamicBatcher, ModelConfig, Tensor
 from pytriton.triton import Triton, TritonConfig
-import logging
-import os
 
 LOGGER = logging.getLogger("examples.huggingface_stable_diffusion.server")
 

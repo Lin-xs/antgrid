@@ -1,21 +1,17 @@
 """Server for ChatGLM 6B."""
 import base64
 import io
-import os
-import logging
 import json
+import logging
+import os
+from typing import Union
 
 import numpy as np
 import torch  # pytype: disable=import-error
 import transformers
-
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
-
-from transformers import AutoTokenizer, AutoModel
-from typing import Union
-
-
 from pytriton.decorators import batch
+from transformers import AutoModel, AutoTokenizer
 
 LOGGER = logging.getLogger("examples.huggingface_llama2-7b-chat.server")
 LOGGER.setLevel(logging.DEBUG)
