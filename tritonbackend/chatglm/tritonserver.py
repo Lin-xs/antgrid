@@ -82,7 +82,7 @@ def main():
     )
 
     with Triton(config=config) as triton:
-        model = tritonmodel.PytritonModel()
+        model = tritonmodel.PytritonModel(args.repo, args.device)
         triton.bind(
             model_name="ChatGLM_6B",
             infer_func= model._infer_fn,
