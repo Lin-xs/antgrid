@@ -21,8 +21,8 @@ def _parse_args():
     parser.add_argument(
         "--repo",
         type=str,
-        default="baichuan-inc/Baichuan-13B-Chat",
-        help="The directory of huggingface Baichuan-13B-Chat"
+        default="meta-llama/Llama-2-7b-chat-hf",
+        help="The directory of huggingface meta-llama/Llama-2-7b-chat-hf"
     )
     parser.add_argument(
         "--http_port",

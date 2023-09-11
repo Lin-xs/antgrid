@@ -22,13 +22,13 @@ def _parse_args():
     parser.add_argument(
         "--repo",
         type=str,
-        default="baichuan-inc/Baichuan-13B-Chat",
-        help="The directory of huggingface Baichuan-13B-Chat"
+        default="runwayml/stable-diffusion-v1-5",
+        help="The directory of huggingface runwayml/stable-diffusion-v1-5."
     )
     parser.add_argument(
         "--lora_dir",
-        required=True,
-        help="The directory of lora safetensors. Download by running ..."#TODO
+        default="/root/antgrid/tritonbackend/sd1_5/lora_safetensors",
+        help="The directory of lora safetensors."
     )
     parser.add_argument(
         "--http_port",

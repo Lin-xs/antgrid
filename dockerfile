@@ -13,7 +13,7 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.1.0-1-Linux-x86
   bash install_miniconda.sh -b -p /opt/conda && rm install_miniconda.sh
 ENV PATH="/opt/conda/bin:${PATH}"
 
-RUN conda install python=3.8 pip cmake 
+RUN conda install python=3.8 pip cmake
 
 # RUN pip install --no-cache-dir --default-timeout=1000 torch torchvision
 
@@ -21,10 +21,12 @@ RUN pip install --no-cache-dir  torch==2.0.0+cu117 torchvision==0.15.1+cu117 tor
 
 RUN pip install nvidia-pytriton
 
-RUN mkdir test
+RUN mkdir antgrid
 
-COPY . test/
+COPY . antgrid/
 
-EXPOSE 8000 8001
+RUN cd antgrid && pip install -r requirements.txt
+
+EXPOSE 8000 8001 8002
 
 CMD bash
