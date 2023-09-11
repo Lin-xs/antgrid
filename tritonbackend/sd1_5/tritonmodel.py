@@ -7,7 +7,7 @@ from typing import Union
 import numpy as np
 import torch  # pytype: disable=import-error
 from diffusers import StableDiffusionPipeline  # pytype: disable=import-error
-from .lora_diffusion import patch_pipe, tune_lora_scale
+from lora_diffusion import patch_pipe, tune_lora_scale
 from pytriton.decorators import batch
 
 LOGGER = logging.getLogger("examples.huggingface_stable_diffusion.model")

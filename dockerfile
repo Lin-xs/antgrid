@@ -19,7 +19,7 @@ RUN conda install python=3.8 pip cmake
 
 RUN pip install --no-cache-dir  torch==2.0.0+cu117 torchvision==0.15.1+cu117 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu117
 
-RUN pip install nvidia-pytriton
+RUN pip install nvidia-pytriton fire
 
 RUN mkdir antgrid
 
