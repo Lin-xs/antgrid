@@ -1,4 +1,4 @@
-"""Server for ChatGLM 6B."""
+"""Server for Llama-7B-chat."""
 import json
 import logging
 from typing import Union
