@@ -23,7 +23,7 @@ state_pack = {
 token = ""
 stream_llm = ["chatglm", "baichuan"]
 no_stream_llm = ["llama2"]
-diffusion_model = ["sd1.5"]
+diffusion_model = ["sd1.5", "sd2.1"]
 
 def _parse_args():
     parser = argparse.ArgumentParser(description="AntGrid Server Communication Module.")
@@ -56,8 +56,8 @@ def _parse_args():
         '--model',
         type=str,
         required=True,
-        choices=["chatglm", "baichuan", "llama2", "sd1.5"],
-        help="Which model to run. Choose from chatglm, baichuan, llama2 or sd1.5"
+        choices=["chatglm", "baichuan", "llama2", "sd1.5", "sd2.1"],
+        help="Which model to run. Choose from chatglm, baichuan, llama2 or sd1.5, sd2.1"
     )
     parser.add_argument(
         "--http_port",
@@ -163,8 +163,14 @@ def _on_message(wsapp, message):
         def call_diffusion(
                 wsapp: websocket.WebSocketApp,
                 payload: Dict,
-                tid: int):
-            model = StableDiffusion_1_5Call
+                tid: int,
+                model_to_run_name="sd1.5"):
+            if model_to_run_name == "sd1.5":
+                model = StableDiffusion_1_5Call
+            elif model_to_run_name == "sd2.1":
+                model = StableDiffusion_2_1Call
+            else:
+                raise NotImplementedError
             image = model.infer(
                 payload=payload,
                 tid=tid,
@@ -207,7 +213,7 @@ def _on_message(wsapp, message):
         elif model_name in no_stream_llm:
             call_llama2(wsapp=wsapp, payload=payload, tid=message["tid"])
         elif model_name in diffusion_model:
-            call_diffusion(wsapp=wsapp, payload=payload, tid=message["tid"])
+            call_diffusion(wsapp=wsapp, payload=payload, tid=message["tid"], model_to_run_name=model_name)
         else:
             raise NotImplementedError
 

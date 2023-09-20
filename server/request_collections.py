@@ -148,6 +148,33 @@ class StableDiffusion_1_5Call:
                                              num_inference_steps = inference_steps)
             return result_dict["image"][0]
 
+class StableDiffusion_2_1Call:
+    @staticmethod
+    def infer(payload, tid, method="grpc", address="localhost", port="9088"):
+        lora_tag = int(payload["lora_tag"])
+        scale = float(payload["scale"])
+        prompt = payload["prompt"]
+        img_height = int(payload["height"])
+        img_width = int(payload["width"])
+        inference_steps = int(payload["inference_steps"])
+
+        lora_tag = np.array([[lora_tag]])
+        scale = np.array([[scale]], dtype=np.float32)
+        prompt = np.array([[prompt]])
+        prompt = np.char.encode(prompt, "utf-8")
+        img_height = np.array([[img_height]])
+        img_width = np.array([[img_width]])
+        inference_steps = np.array([[inference_steps]])
+
+        with ModelClient(f"{method}://{address}:{port}", "StableDiffusion_2_1", init_timeout_s=1200.0) as client:
+            result_dict = client.infer_batch(lora_tag = lora_tag,
+                                             scale = scale,
+                                             prompt=prompt,
+                                             img_H = img_height,
+                                             img_W = img_width,
+                                             num_inference_steps = inference_steps)
+            return result_dict["image"][0]
+
 class Llama2Call:
     @staticmethod
     def infer(payload, tid, method="grpc", address="localhost", port="8001"):
@@ -164,5 +191,5 @@ class Llama2Call:
 
 
 
-__all__ = ["ChatGLMCall", "BaichuanCall", "StableDiffusion_1_5Call", "Llama2Call"]
+__all__ = ["ChatGLMCall", "BaichuanCall", "StableDiffusion_1_5Call", "Llama2Call", "StableDiffusion_2_1Call"]
 
